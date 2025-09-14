@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,7 +38,7 @@
             font-size: 2em;
             font-weight: bold;
             color: #ffffff;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
             margin: 10px 0;
         }
 
@@ -83,63 +84,121 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
         }
 
         @keyframes slideRightIn {
-            from { transform: translate(100%, -50%); }
-            to { transform: translate(-50%, -50%); }
+            from {
+                transform: translate(100%, -50%);
+            }
+
+            to {
+                transform: translate(-50%, -50%);
+            }
         }
 
         @keyframes slideRightOut {
-            from { transform: translate(-50%, -50%); }
-            to { transform: translate(-200%, -50%); }
+            from {
+                transform: translate(-50%, -50%);
+            }
+
+            to {
+                transform: translate(-200%, -50%);
+            }
         }
 
         @keyframes slideLeftIn {
-            from { transform: translate(-200%, -50%); }
-            to { transform: translate(-50%, -50%); }
+            from {
+                transform: translate(-200%, -50%);
+            }
+
+            to {
+                transform: translate(-50%, -50%);
+            }
         }
 
         @keyframes slideLeftOut {
-            from { transform: translate(-50%, -50%); }
-            to { transform: translate(100%, -50%); }
+            from {
+                transform: translate(-50%, -50%);
+            }
+
+            to {
+                transform: translate(100%, -50%);
+            }
         }
 
         @keyframes scaleIn {
-            from { transform: translate(-50%, -50%) scale(0); }
-            to { transform: translate(-50%, -50%) scale(1); }
+            from {
+                transform: translate(-50%, -50%) scale(0);
+            }
+
+            to {
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         @keyframes scaleOut {
-            from { transform: translate(-50%, -50%) scale(1); }
-            to { transform: translate(-50%, -50%) scale(0); }
+            from {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            to {
+                transform: translate(-50%, -50%) scale(0);
+            }
         }
 
         @keyframes bounceIn {
-            0% { transform: translate(-50%, -50%) scale(0.3); }
-            50% { transform: translate(-50%, -50%) scale(1.05); }
-            70% { transform: translate(-50%, -50%) scale(0.9); }
-            100% { transform: translate(-50%, -50%) scale(1); }
+            0% {
+                transform: translate(-50%, -50%) scale(0.3);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         @keyframes bounceOut {
-            from { transform: translate(-50%, -50%) scale(1); }
-            to { transform: translate(-50%, -50%) scale(0); }
+            from {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            to {
+                transform: translate(-50%, -50%) scale(0);
+            }
         }
     </style>
 </head>
+
 <body>
     <div id="overlay-container"></div>
 
-<script src="./commands.js"></script>
+    <script src="./commands.js"></script>
     <script src="./events.js"></script>
+    <script src="./handler.js"></script>
     <script src="./twitch-command-handler.js"></script>
     <script src="./twitch-event-handler.js"></script>
     <script src="./twitch-eventsub.js"></script>
@@ -151,4 +210,5 @@
         });
     </script>
 </body>
+
 </html>
