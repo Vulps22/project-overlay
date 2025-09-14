@@ -1,0 +1,198 @@
+// Twitch EventSub WebSocket Handler
+// This file defines the TwitchEventSubWebSocket class as a global variable
+
+var TwitchEventSubWebSocket = class {
+    constructor() {
+        this.websocket = null;
+        this.sessionId = null;
+        this.accessToken = null;
+        this.clientId = null;
+        this.userId = null;
+        this.init();
+    }
+
+    async init() {
+        // Get access token and client ID from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        this.accessToken = urlParams.get('twitch-token');
+        this.clientId = urlParams.get('twitch-client-id');
+        
+        if (!this.accessToken) {
+            console.warn('No Twitch token provided. EventSub WebSocket will not work without authentication.');
+            return;
+        }
+        
+        if (!this.clientId) {
+            console.warn('No Twitch Client ID provided. EventSub WebSocket will not work without Client ID.');
+            return;
+        }
+
+        // Get user ID from Twitch API
+        await this.getUserId();
+        
+        // Check token scopes before proceeding
+        await this.checkTokenScopes();
+        
+        // Connect to EventSub WebSocket
+        this.connectEventSub();
+    }
+
+    async getUserId() {
+        try {
+            const response = await fetch('https://api.twitch.tv/helix/users', {
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Client-Id': this.clientId
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.userId = data.data[0].id;
+                console.log('EventSub: Got user ID:', this.userId);
+            } else {
+                console.error('EventSub: Failed to get user ID:', response.statusText);
+            }
+        } catch (error) {
+            console.error('EventSub: Error getting user ID:', error);
+        }
+    }
+
+    async checkTokenScopes() {
+        try {
+            const response = await fetch('https://id.twitch.tv/oauth2/validate', {
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('EventSub: Current token scopes:', data.scopes);
+                console.log('EventSub: Required scopes: user:read:chat, user:bot, channel:bot, channel:read:subscriptions, moderator:read:followers');
+                
+                const requiredScopes = ['user:read:chat', 'channel:read:subscriptions', 'moderator:read:followers'];
+                const missingScopes = requiredScopes.filter(scope => !data.scopes.includes(scope));
+                
+                if (missingScopes.length > 0) {
+                    console.error('EventSub: Token missing required scopes:', missingScopes);
+                } else {
+                    console.log('EventSub: All required scopes present!');
+                }
+            } else {
+                console.error('EventSub: Failed to validate token:', response.statusText);
+            }
+        } catch (error) {
+            console.error('EventSub: Error validating token:', error);
+        }
+    }
+
+    connectEventSub() {
+        this.websocket = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
+        
+        this.websocket.onopen = () => {
+            console.log('EventSub: WebSocket connected');
+        };
+
+        this.websocket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            this.handleEventSubMessage(message);
+        };
+
+        this.websocket.onclose = (event) => {
+            console.log('EventSub: WebSocket closed:', event.code, event.reason);
+            // Reconnect after a delay
+            setTimeout(() => this.connectEventSub(), 5000);
+        };
+
+        this.websocket.onerror = (error) => {
+            console.error('EventSub: WebSocket error:', error);
+        };
+    }
+
+    async handleEventSubMessage(message) {
+        console.log('EventSub: Received message:', message);
+
+        switch (message.metadata.message_type) {
+            case 'session_welcome':
+                this.sessionId = message.payload.session.id;
+                console.log('EventSub: Got session ID:', this.sessionId);
+                await this.subscribeToChatMessages();
+                break;
+
+            case 'session_keepalive':
+                console.log('EventSub: Keepalive received');
+                break;
+
+            case 'notification':
+                this.handleNotification(message);
+                break;
+
+            case 'session_reconnect':
+                console.log('EventSub: Reconnect requested');
+                // Handle reconnection
+                break;
+
+            default:
+                console.log('EventSub: Unknown message type:', message.metadata.message_type);
+        }
+    }
+
+    async subscribeToChatMessages() {
+        if (!this.sessionId || !this.userId) {
+            console.error('EventSub: Cannot subscribe - missing session ID or user ID');
+            return;
+        }
+
+        const subscriptionData = {
+            type: 'channel.chat.message',
+            version: '1',
+            condition: {
+                broadcaster_user_id: this.userId,
+                user_id: this.userId
+            },
+            transport: {
+                method: 'websocket',
+                session_id: this.sessionId
+            }
+        };
+
+        try {
+            const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Client-Id': this.clientId,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(subscriptionData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('EventSub: Successfully subscribed to chat messages:', result);
+            } else {
+                const error = await response.json();
+                console.error('EventSub: Failed to subscribe to chat messages:', error);
+            }
+        } catch (error) {
+            console.error('EventSub: Error subscribing to chat messages:', error);
+        }
+    }
+
+    handleNotification(message) {
+        const event = message.payload.event;
+        
+        if (message.payload.subscription.type === 'channel.chat.message') {
+            console.log('=== EVENTSUB CHAT MESSAGE ===');
+            console.log('User:', event.chatter_user_name);
+            console.log('Display Name:', event.chatter_user_display_name);
+            console.log('Message:', event.message.text);
+            console.log('Channel:', event.broadcaster_user_name);
+            console.log('Message ID:', event.message_id);
+            console.log('Timestamp:', event.message.timestamp);
+            console.log('Raw Event:', event);
+            console.log('=============================');
+        }
+    }
+};
