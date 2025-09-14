@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Command Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .command-output {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .command-image {
+            max-width: 300px;
+            max-height: 300px;
+            object-fit: contain;
+        }
+
+        .command-video {
+            max-width: 400px;
+            max-height: 400px;
+        }
+
+        .command-text {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin: 10px 0;
+        }
+
+        /* Predefined Transitions */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.5s ease-out;
+        }
+
+        .slide-right-in {
+            animation: slideRightIn 0.5s ease-out;
+        }
+
+        .slide-right-out {
+            animation: slideRightOut 0.5s ease-in;
+        }
+
+        .slide-left-in {
+            animation: slideLeftIn 0.5s ease-out;
+        }
+
+        .slide-left-out {
+            animation: slideLeftOut 0.5s ease-in;
+        }
+
+        .scale-in {
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        .scale-out {
+            animation: scaleOut 0.5s ease-in;
+        }
+
+        .bounce-in {
+            animation: bounceIn 0.8s ease-out;
+        }
+
+        .bounce-out {
+            animation: bounceOut 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        @keyframes slideRightIn {
+            from { transform: translate(100%, -50%); }
+            to { transform: translate(-50%, -50%); }
+        }
+
+        @keyframes slideRightOut {
+            from { transform: translate(-50%, -50%); }
+            to { transform: translate(-200%, -50%); }
+        }
+
+        @keyframes slideLeftIn {
+            from { transform: translate(-200%, -50%); }
+            to { transform: translate(-50%, -50%); }
+        }
+
+        @keyframes slideLeftOut {
+            from { transform: translate(-50%, -50%); }
+            to { transform: translate(100%, -50%); }
+        }
+
+        @keyframes scaleIn {
+            from { transform: translate(-50%, -50%) scale(0); }
+            to { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes scaleOut {
+            from { transform: translate(-50%, -50%) scale(1); }
+            to { transform: translate(-50%, -50%) scale(0); }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -50%) scale(0.3); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            70% { transform: translate(-50%, -50%) scale(0.9); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes bounceOut {
+            from { transform: translate(-50%, -50%) scale(1); }
+            to { transform: translate(-50%, -50%) scale(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tmi.js/browser/tmi.min.js"></script>
+    <script>
+        class TwitchCommandOverlay {
+            constructor() {
+                this.commands = {};
+                this.modules = {};
+                this.container = document.getElementById('overlay-container');
+                this.init();
+            }
+
+            async init() {
+                await this.loadCommands();
+                this.connectToTwitch();
+            }
+
+            async loadCommands() {
+                try {
+                    // Get list of command files
+                    const commandFiles = await this.getCommandFiles();
+                    
+                    // Load each command file
+                    for (const fileName of commandFiles) {
+                        try {
+                            const response = await fetch(`./commands/${fileName}`);
+                            const commandData = await response.json();
+                            
+                            // Use filename (without .json) as command name if not specified
+                            const commandName = commandData.command_name || fileName.replace('.json', '');
+                            this.commands[commandName] = commandData;
+                            
+                            console.log(`Loaded command: ${commandName}`);
+                        } catch (error) {
+                            console.error(`Failed to load command file ${fileName}:`, error);
+                        }
+                    }
+                    
+                    console.log('All commands loaded:', Object.keys(this.commands));
+                } catch (error) {
+                    console.error('Failed to load commands:', error);
+                }
+            }
+
+            async getCommandFiles() {
+                // This is a simplified approach - in a real implementation you might need
+                // a server endpoint to list files, or manually maintain a list
+                // For now, we'll try common command names and catch errors
+                const commonCommands = [
+                    'lurk.json', 'hype.json', 'hello.json', 'thanks.json', 
+                    'brb.json', 'gg.json', 'rip.json', 'wow.json'
+                ];
+                
+                const existingFiles = [];
+                for (const file of commonCommands) {
+                    try {
+                        const response = await fetch(`./commands/${file}`, { method: 'HEAD' });
+                        if (response.ok) {
+                            existingFiles.push(file);
+                        }
+                    } catch (error) {
+                        // File doesn't exist, skip
+                    }
+                }
+                
+                return existingFiles;
+            }
+
+            connectToTwitch() {
+                // Replace with your Twitch channel name
+                const channel = 'YOUR_CHANNEL_NAME';
+                
+                const client = new tmi.Client({
+                    channels: [channel]
+                });
+
+                client.connect();
+
+                client.on('message', (channel, tags, message, self) => {
+                    if (self) return; // Ignore echoed messages
+
+                    if (message.startsWith('!')) {
+                        const commandText = message.substring(1);
+                        const commandName = commandText.split(' ')[0].toLowerCase();
+                        const args = commandText.split(' ').slice(1);
+                        
+                        this.executeCommand(commandName, args, tags);
+                    }
+                });
+
+                console.log(`Connected to Twitch channel: ${channel}`);
+            }
+
+            async executeCommand(commandName, args, userTags) {
+                if (this.commands[commandName]) {
+                    await this.executeJSONCommand(this.commands[commandName], args, userTags);
+                } else if (await this.loadModule(commandName)) {
+                    await this.executeModuleCommand(commandName, args, userTags);
+                } else {
+                    console.log(`Unknown command: ${commandName}`);
+                }
+            }
+
+            async executeJSONCommand(commandData, args, userTags) {
+                const outputElement = document.createElement('div');
+                outputElement.className = 'command-output';
+                
+                // Apply transition in class
+                if (commandData.transition_in) {
+                    outputElement.classList.add(commandData.transition_in);
+                }
+
+                // Add image
+                if (commandData.image) {
+                    const img = document.createElement('img');
+                    img.src = `./assets/${commandData.image}`;
+                    img.className = 'command-image';
+                    outputElement.appendChild(img);
+                }
+
+                // Add video
+                if (commandData.video) {
+                    const video = document.createElement('video');
+                    video.src = `./assets/${commandData.video}`;
+                    video.className = 'command-video';
+                    video.autoplay = true;
+                    video.muted = true;
+                    outputElement.appendChild(video);
+                }
+
+                // Add text
+                if (commandData.text) {
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'command-text';
+                    textDiv.textContent = commandData.text;
+                    outputElement.appendChild(textDiv);
+                }
+
+                // Play sound
+                if (commandData.sound) {
+                    const audio = new Audio(`./assets/${commandData.sound}`);
+                    audio.play().catch(error => {
+                        console.warn('Could not play sound:', error);
+                    });
+                }
+
+                // Add to container
+                this.container.appendChild(outputElement);
+
+                // Remove after timeout
+                const timeout = this.parseTimeout(commandData.timeout || '3s');
+                setTimeout(() => {
+                    this.removeElement(outputElement, commandData.transition_out);
+                }, timeout);
+            }
+
+            async loadModule(moduleName) {
+                if (this.modules[moduleName]) {
+                    return true;
+                }
+
+                try {
+                    const module = await import(`./modules/${moduleName}.js`);
+                    this.modules[moduleName] = module;
+                    return true;
+                } catch (error) {
+                    console.log(`Module ${moduleName} not found`);
+                    return false;
+                }
+            }
+
+            async executeModuleCommand(moduleName, args, userTags) {
+                const module = this.modules[moduleName];
+                if (module && module.default && typeof module.default.execute === 'function') {
+                    await module.default.execute(args, userTags, this.container);
+                }
+            }
+
+            removeElement(element, transitionOut) {
+                if (transitionOut) {
+                    element.className = 'command-output ' + transitionOut;
+                    setTimeout(() => {
+                        if (element.parentNode) {
+                            element.parentNode.removeChild(element);
+                        }
+                    }, 500); // Match animation duration
+                } else {
+                    if (element.parentNode) {
+                        element.parentNode.removeChild(element);
+                    }
+                }
+            }
+
+            parseTimeout(timeoutStr) {
+                const match = timeoutStr.match(/^(\d+(?:\.\d+)?)(s|ms)$/);
+                if (!match) return 3000; // Default 3 seconds
+                
+                const value = parseFloat(match[1]);
+                const unit = match[2];
+                
+                return unit === 's' ? value * 1000 : value;
+            }
+        }
+
+        // Initialize the overlay when the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            new TwitchCommandOverlay();
+        });
+    </script>
+</body>
+</html>

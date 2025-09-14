@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay - Socials Bar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0);
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        :root {
+            --theme-color: #E53E3E;
+            --bar-bg-color: rgba(45, 45, 45, 0.85); /* A dark gray as requested */
+            --icon-bar-width: 60px;
+        }
+        
+        /* This is the PERMANENT vertical icon bar */
+        .socials-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            width: var(--icon-bar-width);
+            height: 275px; /* Increased height for 5 items */
+            padding: 0; /* Removed padding to allow items to fill the space */
+            background-color: var(--bar-bg-color);
+            border-radius: 8px;
+            border-left: 4px solid var(--theme-color);
+            transition: border-radius 0.1s 0.4s ease; /* Add a slight delay to the transition */
+        }
+
+        /* New class to square off the corners when a panel is visible */
+        .socials-box.panel-visible {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .social-item {
+            display: flex;
+            justify-content: center; /* Center the icon */
+            align-items: center;
+            font-size: 16px;
+            font-weight: 700;
+            position: relative;
+            height: 20%; /* Each item takes up 1/5 of the container height */
+        }
+        .social-item i {
+            color: var(--theme-color);
+            font-size: 24px;
+            text-align: center;
+            z-index: 5; /* Keep icon above everything */
+            transition: transform 0.3s ease;
+        }
+
+        /* --- BACKGROUND PANEL SYSTEM --- */
+        /* This is the horizontal part that appears/disappears */
+        .social-item .panel {
+            position: absolute;
+            left: 100%; /* Position it just to the right of the permanent bar */
+            top: 0;
+            height: 100%; /* Panel is now thicker, matching the new item height */
+            background-color: var(--bar-bg-color);
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            white-space: nowrap;
+            
+            /* Initial hidden state */
+            width: 0;
+            opacity: 0;
+            transform-origin: left;
+            transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+            z-index: -1; /* Sit behind the main icon bar */
+        }
+        
+        /* When an item is active, the panel's opacity changes */
+        /* The width is now controlled by JavaScript */
+        .social-item.active .panel {
+            opacity: 1;
+        }
+        
+        /* Make the active icon pop a little */
+        .social-item.active i {
+            transform: scale(1.1);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="socials-box">
+        <div class="social-item">
+            <i class="fab fa-tiktok"></i>
+            <div class="panel"><span>@vulps22</span></div>
+        </div>
+        <div class="social-item">
+            <i class="fab fa-instagram"></i>
+            <div class="panel"><span>@vulps22</span></div>
+        </div>
+        <div class="social-item">
+            <i class="fab fa-youtube"></i>
+            <div class="panel"><span>/@vulps22</span></div>
+        </div>
+        <div class="social-item">
+            <i class="fab fa-twitch"></i>
+            <div class="panel"><span>twitch.tv/vulps22</span></div>
+        </div>
+        <div class="social-item">
+            <i class="fab fa-discord"></i>
+            <div class="panel"><span>https://discord.vulps.co.uk</span></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socialsBox = document.querySelector('.socials-box');
+            const socialItems = document.querySelectorAll('.social-item');
+            let currentIndex = 0;
+            let intervalId; // Store the interval ID so we can reset it
+
+            // --- CUSTOMIZE TIMING HERE ---
+            const displayDuration = 10000; // How long each name stays visible (10 seconds)
+            const intervalBetween = 30000; // How long between each name appearing (30 seconds)
+            // -----------------------------
+
+            // Pre-calculate the required width for each panel based on its text content
+            socialItems.forEach(item => {
+                const panel = item.querySelector('.panel');
+                const span = panel.querySelector('span');
+                const padding = 40; // 20px on each side
+                const requiredWidth = span.offsetWidth + padding;
+                // Store the calculated width on the element itself
+                panel.dataset.width = `${requiredWidth}px`;
+            });
+
+            function showNextSocial() {
+                // Hide any currently active social
+                socialItems.forEach(item => {
+                    item.classList.remove('active');
+                    item.querySelector('.panel').style.width = '0';
+                });
+                socialsBox.classList.remove('panel-visible');
+
+                // Get the next social item to show
+                const currentSocial = socialItems[currentIndex];
+                const panel = currentSocial.querySelector('.panel');
+                
+                currentSocial.classList.add('active');
+                socialsBox.classList.add('panel-visible');
+                
+                panel.style.width = panel.dataset.width;
+
+                // Set a timeout to hide it after the display duration
+                setTimeout(() => {
+                    if (currentSocial.classList.contains('active')) {
+                        currentSocial.classList.remove('active');
+                        panel.style.width = '0'; // Retract the panel
+                        socialsBox.classList.remove('panel-visible');
+                    }
+                }, displayDuration);
+
+                // Move to the next index for the next cycle
+                currentIndex = (currentIndex + 1) % socialItems.length;
+            }
+
+            // Start the loop
+            intervalId = setInterval(showNextSocial, intervalBetween);
+
+            // Click handler for manual progression
+            socialsBox.addEventListener('click', function() {
+                // Clear the existing interval
+                clearInterval(intervalId);
+                
+                // Immediately show the next social
+                showNextSocial();
+                
+                // Restart the interval
+                intervalId = setInterval(showNextSocial, intervalBetween);
+            });
+        });
+    </script>
+</body>
+</html>

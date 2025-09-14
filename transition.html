@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Diagonal Background</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: transparent; /* Transparent for OBS */
+        }
+
+        .background-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* The container for each diagonal lane */
+        .streak-lane {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 200%; /* Extra wide to cover the screen */
+            transform-origin: center;
+            /* Base rotation for all lanes. Vertical position is now handled by JS. */
+            transform: translateX(-50%) translateY(-50%) rotate(90deg);
+            overflow: hidden; /* Hide bars as they move out */
+        }
+
+        /* The individual bars that will be animated */
+        .bar {
+            position: absolute;
+            height: 100%;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="background-container" id="background-container">
+        <!-- Lanes will be dynamically created here -->
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURATION ---
+            const barPattern = [
+                { color: '#E53E3E', width: 80 }, // Bright Red
+                { color: '#0a0a0a', width: 60 }, // Near Black
+                { color: '#8B0000', width: 100 }, // DarkRed
+                { color: '#2a2a2d', width: 70 }, // Dark Gray
+                { color: '#4a4a4f', width: 50 }, // A solid, lighter gray
+                { color: '#b22222', width: 40 }, // Firebrick Red
+            ];
+
+            const lanes = [];
+            const backgroundContainer = document.getElementById('background-container');
+            
+            // Animation phases
+            let phase = 'idle'; // 'idle', 'moveIn', 'wait', 'moveOut'
+            let phaseStartTime = null;
+            const waitDuration = 1000; // 1 second wait
+            
+            // Simplify the travel distance
+            const travelDistance = window.innerHeight;
+            // Create vertical bars across the screen width
+            let currentX = 0;
+            let laneIndex = 0;
+
+            while (currentX < window.innerWidth + 200) { // Cover the full width plus extra
+                const laneElement = document.createElement('div');
+                laneElement.className = 'streak-lane';
+                
+                const barWidth = barPattern[laneIndex % barPattern.length].width;
+                laneElement.style.height = `100%`;
+                laneElement.style.width = `${barWidth}px`;
+                laneElement.style.left = `${currentX}px`;
+                laneElement.style.top = `0px`;
+                laneElement.style.transform = 'none'; // Remove rotation for debugging
+                
+                backgroundContainer.appendChild(laneElement);
+                
+                const lane = {
+                    element: laneElement,
+                    bars: [],
+                };
+
+                // Create one bar that starts from either top or bottom randomly
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.backgroundColor = barPattern[laneIndex % barPattern.length].color;
+                bar.style.width = `${barWidth}px`;
+                bar.style.height = `100%`;
+                
+                // Randomly start from top or bottom
+                const fromTop = Math.random() > 0.5;
+                const startPos = fromTop ? -window.innerHeight : window.innerHeight;
+                bar.style.top = `${startPos}px`;
+                
+                laneElement.appendChild(bar);
+                
+                // ALWAYS create an opposing bar to fill gaps
+                const oppositeBar = document.createElement('div');
+                oppositeBar.className = 'bar';
+                oppositeBar.style.backgroundColor = barPattern[(laneIndex + 3) % barPattern.length].color; // Different color
+                oppositeBar.style.width = `${barWidth}px`;
+                oppositeBar.style.height = `100%`;
+                
+                const oppositeStartPos = fromTop ? window.innerHeight : -window.innerHeight;
+                oppositeBar.style.top = `${oppositeStartPos}px`;
+                
+                // Add random stagger offset for overlap effect
+                const staggerOffset = (Math.random() - 0.5) * 150; // Random offset between -75px and +75px
+                
+                laneElement.appendChild(oppositeBar);
+                
+                lane.bars = [
+                    { element: bar, startPos: startPos, currentPos: startPos, direction: fromTop ? 'top' : 'bottom', staggerOffset: staggerOffset },
+                    { element: oppositeBar, startPos: oppositeStartPos, currentPos: oppositeStartPos, direction: fromTop ? 'bottom' : 'top', staggerOffset: staggerOffset }
+                ];
+                lane.delay = laneIndex * 30; // Faster stagger
+                lanes.push(lane);
+
+                currentX += barWidth;
+                laneIndex++;
+            }
+
+            // Event listeners for transition control
+            window.addEventListener('transitionStart', function(event) {
+                phase = 'moveIn';
+                phaseStartTime = Date.now();
+            });
+
+            // --- ANIMATION LOOP ---
+            function animate() {
+                const currentTime = Date.now();
+                
+                if (phase === 'idle' || phaseStartTime === null) {
+                    // No animation, just continue the loop
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                
+                const elapsed = currentTime - phaseStartTime;
+                
+                if (phase === 'moveIn') {
+                    // Bars move toward center
+                    lanes.forEach(lane => {
+                        const adjustedElapsed = Math.max(0, elapsed - lane.delay);
+                        const progress = Math.min(1, adjustedElapsed / 1000); // 1 second duration
+                        const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+                        
+                        lane.bars.forEach(bar => {
+                            if (bar.direction === 'top') {
+                                // Top bar moves from above screen down to middle + stagger offset
+                                bar.currentPos = bar.startPos + (easeProgress * (Math.abs(bar.startPos) - (window.innerHeight / 2 + bar.staggerOffset)));
+                            } else {
+                                // Bottom bar moves from below screen up to middle + stagger offset
+                                bar.currentPos = bar.startPos - (easeProgress * (Math.abs(bar.startPos) - (window.innerHeight / 2 - bar.staggerOffset)));
+                            }
+                            bar.element.style.top = `${bar.currentPos}px`;
+                        });
+                    });
+                    
+                    // Check if all bars have finished moving in
+                    if (elapsed > 1000 + (lanes.length - 1) * 30) {
+                        phase = 'wait';
+                        phaseStartTime = currentTime;
+                    }
+                } else if (phase === 'wait') {
+                    // Wait phase
+                    if (elapsed > waitDuration) {
+                        phase = 'moveOut';
+                        phaseStartTime = currentTime;
+                    }
+                } else if (phase === 'moveOut') {
+                    // Bars move back to original positions
+                    lanes.forEach(lane => {
+                        const adjustedElapsed = Math.max(0, elapsed - lane.delay);
+                        const progress = Math.min(1, adjustedElapsed / 1000); // 1 second duration
+                        const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+                        
+                        lane.bars.forEach(bar => {
+                            if (bar.direction === 'top') {
+                                // Top bar moves from current position back to above screen
+                                const targetPos = -(window.innerHeight / 2 + bar.staggerOffset);
+                                bar.currentPos = targetPos - (easeProgress * (Math.abs(bar.startPos) - (window.innerHeight / 2 + bar.staggerOffset)));
+                            } else {
+                                // Bottom bar moves from current position back to below screen
+                                const targetPos = window.innerHeight / 2 - bar.staggerOffset;
+                                bar.currentPos = targetPos + (easeProgress * (Math.abs(bar.startPos) - (window.innerHeight / 2 - bar.staggerOffset)));
+                            }
+                            bar.element.style.top = `${bar.currentPos}px`;
+                        });
+                    });
+                    
+                    // Check if animation is complete
+                    if (elapsed > 1000 + (lanes.length - 1) * 30) {
+                        // Animation complete - return to idle state
+                        phase = 'idle';
+                        phaseStartTime = null;
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        });
+    </script>
+</body>
+</html>

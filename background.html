@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharp Diagonal Background v2</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a1d; /* Dark base color from image */
+        }
+
+        .background-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Base style for all diagonal streaks */
+        .streak {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 200%; /* Extra wide to cover the screen when rotated */
+            transform-origin: center;
+            /* The core rotation for all streaks */
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg);
+        }
+
+        /* --- STREAK DEFINITIONS --- */
+        /* Each streak is a rotated div with a specific color, height (which becomes its visual width), and position */
+
+        /* Main bright red streak */
+        .streak-1 {
+            background-color: #E53E3E;
+            height: 80px;
+            z-index: 4;
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-100px);
+        }
+
+        /* Faint blue/white highlight streak */
+        .streak-2 {
+            background-color: rgba(200, 220, 255, 0.5);
+            height: 40px;
+            z-index: 5;
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(50px);
+        }
+        
+        /* Darker red streak for layering */
+        .streak-3 {
+            background-color: #8B0000;
+            height: 150px;
+            z-index: 2;
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(200px);
+        }
+
+        /* Very dark, almost black streak for depth */
+        .streak-4 {
+            background-color: #0a0a0a;
+            height: 200px;
+            z-index: 1;
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-300px);
+        }
+        
+        /* A second, thinner bright red streak */
+        .streak-5 {
+            background-color: #b22222;
+            height: 30px;
+            z-index: 6;
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(350px);
+        }
+        
+        /* Subtle dark gray streak */
+        .streak-6 {
+            background-color: #2a2a2d;
+            height: 120px;
+            z-index: 3;
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-450px);
+        }
+        
+        /* Another faint white highlight */
+        .streak-7 {
+            background-color: rgba(200, 220, 255, 0.3);
+            height: 20px;
+            z-index: 7;
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-20px);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="background-container">
+        <div class="streak streak-1"></div>
+        <div class="streak streak-2"></div>
+        <div class="streak streak-3"></div>
+        <div class="streak streak-4"></div>
+        <div class="streak streak-5"></div>
+        <div class="streak streak-6"></div>
+        <div class="streak streak-7"></div>
+    </div>
+</body>
+</html>

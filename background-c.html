@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Diagonal Background</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a1d; /* Dark base color */
+        }
+
+        .background-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* The container for each diagonal lane */
+        .streak-lane {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 200%; /* Extra wide to cover the screen */
+            transform-origin: center;
+            /* Base rotation for all lanes. Vertical position is now handled by JS. */
+            transform: translateX(-50%) translateY(-50%) rotate(-45deg);
+            overflow: hidden; /* Hide bars as they move out */
+        }
+
+        /* The individual bars that will be animated */
+        .bar {
+            position: absolute;
+            height: 100%;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="background-container" id="background-container">
+        <!-- Lanes will be dynamically created here -->
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURATION ---
+            const barPattern = [
+                { color: '#E53E3E', width: 250 }, // Bright Red
+                { color: '#0a0a0a', width: 150 }, // Near Black
+                { color: '#8B0000', width: 300 }, // DarkRed
+                { color: '#2a2a2d', width: 200 }, // Dark Gray
+                { color: '#4a4a4f', width: 150 }, // A solid, lighter gray
+                { color: '#b22222', width: 100 }, // Firebrick Red
+            ];
+
+            const lanes = [];
+            const containerWidth = window.innerWidth * 1.5;
+            const patternTotalWidth = barPattern.reduce((sum, bar) => sum + bar.width, 0);
+            const backgroundContainer = document.getElementById('background-container');
+            
+            // --- NEW: Dynamic Lane Generation to Fill Screen ---
+            const diagonal = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2));
+            let currentY = -diagonal / 2 - 200; // Start well above the top-left corner
+            let laneIndex = 0;
+
+            while (currentY < diagonal / 2 + 200) { // Continue until well past the bottom-right corner
+                const laneElement = document.createElement('div');
+                laneElement.className = 'streak-lane';
+                
+                const randomLaneHeight = Math.random() * 120 + 40;
+                laneElement.style.height = `${randomLaneHeight}px`;
+                
+                // Set the vertical position and z-index
+                laneElement.style.transform = `translateX(-50%) translateY(-50%) rotate(-45deg) translateY(${currentY}px)`;
+                laneElement.style.zIndex = (laneIndex % 7) + 1; // Cycle through z-indexes
+                
+                backgroundContainer.appendChild(laneElement);
+                
+                const lane = {
+                    element: laneElement,
+                    bars: [],
+                    speed: 1.0, // Same speed for all lanes
+                };
+
+                // Calculate the diagonal screen width that this lane needs to cover
+                const diagonalWidth = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)) * 1.5;
+                
+                // Calculate stagger offset for this lane to prevent alignment with adjacent lanes
+                const staggerOffset = (laneIndex * diagonalWidth * 0.3) % diagonalWidth;
+                
+                // Create multiple bars to ensure seamless edge-to-edge coverage
+                // We need at least 2 bars to create seamless looping
+                for (let i = 0; i < 2; i++) {
+                    // Use different colors for adjacent bars in the same lane
+                    const colorIndex = (laneIndex + i) % barPattern.length;
+                    const selectedColor = barPattern[colorIndex].color;
+                    
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    bar.style.backgroundColor = selectedColor;
+                    bar.style.width = `${diagonalWidth}px`;
+                    bar.style.left = `${(i * diagonalWidth) - staggerOffset}px`;
+                    
+                    laneElement.appendChild(bar);
+                    lane.bars.push(bar);
+                }
+                
+                lane.totalPatternWidth = diagonalWidth;
+                lanes.push(lane);
+
+                // Move to next lane position - ensure perfect edge-to-edge positioning
+                currentY += randomLaneHeight;
+                laneIndex++;
+            }
+
+
+            // --- ANIMATION LOOP ---
+            function animate() {
+                lanes.forEach(lane => {
+                    lane.bars.forEach(bar => {
+                        let currentLeft = parseFloat(bar.style.left);
+                        currentLeft -= lane.speed;
+
+                        // If a bar moves completely off the left edge...
+                        if (currentLeft + lane.totalPatternWidth < 0) {
+                            // ...move it to the right edge to continue seamless loop
+                            currentLeft += lane.totalPatternWidth * lane.bars.length;
+                        }
+                        bar.style.left = `${currentLeft}px`;
+                    });
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        });
+    </script>
+</body>
+</html>

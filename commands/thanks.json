@@ -1,0 +1,9 @@
+{
+  "command_name": "thanks",
+  "image": "thanks.gif",
+  "text": "Thank you!",
+  "sound": "thanks.wav",
+  "transition_in": "fade-in",
+  "transition_out": "fade-out",
+  "timeout": "4s"
+}

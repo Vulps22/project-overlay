@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay - Username</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+            /* This will center the username box in the window */
+            display: grid;
+            place-items: center;
+        }
+        :root {
+            --theme-color: #E53E3E;
+            --theme-glow-color: rgba(229, 62, 62, 0.6);
+            --smoke-base-color: rgba(255, 255, 255, 0.08);
+            --comet-yellow: #FFD700;
+        }
+        @keyframes rising-smoke {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(1);
+            }
+            25% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(1.5);
+            }
+        }
+        
+        /* New animation for the bouncing lines */
+        @keyframes bounce-line {
+            0% {
+                left: -50%; /* Start completely off the left side */
+            }
+            50% {
+                left: 100%; /* Move to the far right side */
+            }
+            100% {
+                left: -50%; /* Move back to the left */
+            }
+        }
+
+        .username-box {
+            /* The element now scales based on the window size */
+            width: 95%; /* It will take up 95% of the window's width */
+            aspect-ratio: 250 / 60; /* This maintains the original shape */
+            max-height: 95%; /* This prevents it from being taller than the window */
+            
+            background-color: rgba(12, 12, 12, 0.7);
+            transform: skewX(-25deg); 
+            border-radius: 8px;
+            border: 2px solid var(--theme-color);
+            box-shadow: 0 0 20px var(--theme-glow-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative; /* Needed for positioning the smoke and lines */
+            box-sizing: border-box;
+            overflow: hidden; /* Crucial for hiding the lines as they move off-screen */
+        }
+        .username-text {
+            transform: skewX(25deg); 
+            /* The font size now scales with the box size */
+            font-size: clamp(1rem, 8vh, 5rem);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 8px var(--theme-glow-color);
+        }
+
+        /* Smoke wisps for the username box */
+        .username-box::before,
+        .username-box::after {
+            content: '';
+            position: absolute;
+            top: -20px; /* Start just above the box */
+            width: 80px;
+            height: 20px;
+            background: var(--smoke-base-color);
+            border-radius: 50%;
+            filter: blur(10px);
+            opacity: 0;
+            /* We need to un-skew the smoke so it rises straight up */
+            transform: skewX(25deg); 
+            animation: rising-smoke 7s infinite linear;
+        }
+
+        .username-box::before {
+            left: 20%;
+        }
+
+        .username-box::after {
+            left: 60%;
+            animation-delay: 3.5s;
+        }
+
+        /* --- Bouncing Line Styles --- */
+        .line {
+            position: absolute;
+            width: 50%; /* The comet is 50% of the box width */
+            height: 3px;
+            border-radius: 3px;
+            /* The gradient you requested: yellow in the middle, fading to red, then transparent */
+            background: linear-gradient(to right, rgba(229, 62, 62, 0), var(--theme-color), var(--comet-yellow), var(--theme-color), rgba(229, 62, 62, 0));
+            animation: bounce-line 4s infinite linear;
+        }
+
+        .top-line {
+            top: 0;
+        }
+
+        .bottom-line {
+            bottom: 0;
+            /* This starts the bottom line animation halfway through, so it moves opposite to the top line */
+            animation-delay: -2s;
+        }
+    </style>
+</head>
+<body>
+    <div class="username-box">
+        <span class="top-line line"></span>
+        <span class="bottom-line line"></span>
+        <span class="username-text">Vulps22</span>
+    </div>
+</body>
+</html>

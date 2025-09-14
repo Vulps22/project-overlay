@@ -1,0 +1,8 @@
+{
+  "command_name": "hype",
+  "video": "hype.mp4",
+  "sound": "hype-sound.mp3",
+  "transition_in": "bounce-in",
+  "transition_out": "bounce-out",
+  "timeout": "5s"
+}

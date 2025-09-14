@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Text Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        :root {
+            --theme-color: #E53E3E;
+            --theme-glow-color: rgba(229, 62, 62, 0.6);
+            --text-shadow-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .text-container {
+            text-align: center;
+            position: relative;
+            max-width: 95%;
+            word-wrap: break-word;
+        }
+
+        .main-text {
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 
+                2px 2px 4px var(--text-shadow-color),
+                0 0 10px var(--theme-glow-color);
+            line-height: 1.2;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Background decoration box (optional) */
+        .text-background {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            padding: 20px 30px;
+            display: none;
+        }
+
+        /* --- ANIMATION CLASSES --- */
+        
+        /* Fade In Animation */
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Slide In From Left */
+        .slide-left {
+            animation: slideLeft 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        @keyframes slideLeft {
+            from { 
+                transform: translateX(-100%); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
+        }
+
+        /* Slide In From Right */
+        .slide-right {
+            animation: slideRight 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        @keyframes slideRight {
+            from { 
+                transform: translateX(100%); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
+        }
+
+        /* Scale Up Animation */
+        .scale-up {
+            animation: scaleUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes scaleUp {
+            from { 
+                transform: scale(0); 
+                opacity: 0; 
+            }
+            to { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+        }
+
+        /* Bounce In Animation */
+        .bounce-in {
+            animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes bounceIn {
+            0% { 
+                transform: scale(0.3); 
+                opacity: 0; 
+            }
+            50% { 
+                transform: scale(1.05); 
+            }
+            70% { 
+                transform: scale(0.9); 
+            }
+            100% { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+        }
+
+        /* Glow Pulse Animation */
+        .glow-pulse {
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%, 100% { 
+                text-shadow: 
+                    2px 2px 4px var(--text-shadow-color),
+                    0 0 10px var(--theme-glow-color);
+            }
+            50% { 
+                text-shadow: 
+                    2px 2px 4px var(--text-shadow-color),
+                    0 0 30px var(--theme-glow-color),
+                    0 0 40px var(--theme-color);
+            }
+        }
+
+        /* Typewriter Animation */
+        .typewriter {
+            overflow: hidden;
+            border-right: 3px solid var(--theme-color);
+            white-space: nowrap;
+            animation: typing 3s steps(50, end), blink 0.75s step-end infinite;
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        @keyframes blink {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--theme-color); }
+        }
+
+        /* Shake Animation */
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* Flip In Animation */
+        .flip-in {
+            animation: flipIn 0.8s ease-in-out;
+        }
+        @keyframes flipIn {
+            from { 
+                transform: perspective(400px) rotateY(-90deg); 
+                opacity: 0; 
+            }
+            to { 
+                transform: perspective(400px) rotateY(0deg); 
+                opacity: 1; 
+            }
+        }
+
+        /* Rainbow Text Animation */
+        .rainbow {
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: rainbow 3s ease infinite;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Bars Rain Text Reveal Animation */
+        .bars-rain-text {
+            position: relative;
+            overflow: visible;
+            opacity: 0;
+            animation: textReveal 0.2s ease-out 3s forwards;
+        }
+
+        /* Bars Rain Text Reveal Animation - Follower Reverse */
+        .bars-rain-text-follower {
+            position: relative;
+            overflow: visible;
+            opacity: 0;
+            animation: textReveal 0.2s ease-out 3s forwards, textHide 0.2s ease-out 6s forwards;
+        }
+
+        @keyframes textHide {
+            to { opacity: 0; }
+        }
+
+        @keyframes textReveal {
+            to { opacity: 1; }
+        }
+
+        /* Rain bar styles */
+        .rain-bar {
+            position: absolute;
+            width: 8px;
+            background: var(--theme-color);
+            opacity: 0.8;
+            z-index: 2;
+        }
+
+        /* Different bar rain animations with stagger - twice as long */
+        .rain-bar.bar-1 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0s forwards; }
+        .rain-bar.bar-2 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s forwards; }
+        .rain-bar.bar-3 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s forwards; }
+        .rain-bar.bar-4 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.6s forwards; }
+        .rain-bar.bar-5 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.8s forwards; }
+        .rain-bar.bar-6 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.0s forwards; }
+        .rain-bar.bar-7 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.2s forwards; }
+        .rain-bar.bar-8 { animation: rainDown 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.4s forwards; }
+
+        @keyframes rainDown {
+            0% {
+                transform: translateY(-100vh);
+                opacity: 0.8;
+            }
+            5% {
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(0vh);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(500vh);
+                opacity: 1;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="text-container">
+        <div class="text-background" id="background"></div>
+        <div class="main-text" id="text"></div>
+    </div>
+
+    <script>
+        // Function to create the bars rain animation
+        function createBarsRainAnimation(isFollower = false) {
+            // Create bars to cover the entire screen width with no gaps
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const minBarWidth = 60; // Minimum bar width (doubled again from 30)
+            const maxBarWidth = 100; // Maximum bar width (doubled again from 50)
+            let currentX = 0;
+            let barIndex = 0;
+            const bars = [];
+            
+            // First pass: create all bars and calculate total count
+            while (currentX < screenWidth + maxBarWidth) {
+                const barWidth = Math.random() * (maxBarWidth - minBarWidth) + minBarWidth;
+                bars.push({ x: currentX, width: barWidth });
+                currentX += barWidth;
+                barIndex++;
+            }
+            
+            const totalBars = bars.length;
+            const barHeight = screenHeight * 2; // Double height bars
+            
+            // Second pass: create bars with wave positioning
+            bars.forEach((barData, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'rain-bar';
+                
+                bar.style.height = `${barHeight}px`;
+                bar.style.width = `${barData.width}px`;
+                bar.style.left = `${barData.x}px`;
+                
+                // Wave effect: bars have staggered bottoms but uniform tops
+                // Calculate stagger so bottoms align at viewport bottom, tops create wave
+                const waveRange = screenHeight; // Wave only affects top positioning
+                const progressAcrossScreen = index / (totalBars - 1); // 0 to 1
+                const waveOffset = progressAcrossScreen * waveRange;
+                
+                // All bars positioned so their bottoms will align at viewport bottom (0vh)
+                // But their tops are staggered to create the wave effect
+                bar.style.top = `${-barHeight - waveOffset}px`;
+                
+                // Calculate the specific translateY needed to get this bar's bottom to viewport bottom
+                const targetTranslateY = screenHeight + waveOffset;
+                
+                // Create unique keyframe animation for this bar
+                const uniqueAnimationName = `rainDown${index}`;
+                
+                // Back to simple working animation
+                const keyframes = `
+                    @keyframes ${uniqueAnimationName} {
+                        0% {
+                            transform: translateY(-100vh);
+                            opacity: 0.8;
+                        }
+                        5% {
+                            opacity: 1;
+                        }
+                        50% {
+                            transform: translateY(${targetTranslateY}px);
+                            opacity: 1;
+                        }
+                        100% {
+                            transform: translateY(${targetTranslateY + screenHeight * 5}px);
+                            opacity: 1;
+                        }
+                    }
+                `;
+                
+                // Add the keyframes to the document
+                const style = document.createElement('style');
+                style.textContent = keyframes;
+                document.head.appendChild(style);
+                
+                // Add color variation
+                const colors = ['#E53E3E', '#8B0000', '#b22222', '#FF6B6B', '#0a0a0a', '#2a2a2d'];
+                bar.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // All bars start falling at the same time, immediately
+                bar.style.animation = `${uniqueAnimationName} 6s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0s forwards`;
+                
+                document.body.appendChild(bar);
+            });
+        }
+
+        // Function to play follower sound
+        function playFollowerSound() {
+            const audio = new Audio('newf.mp3');
+            audio.volume = 1.0; // Reduced volume
+            audio.play().catch(error => {
+                console.log('Audio playback failed:', error);
+            });
+        }
+
+        // Function to play raid sound
+        function playRaidSound() {
+            const audio = new Audio('air-raid.mp3');
+            audio.volume = 1.0;
+            audio.play().catch(error => {
+                console.log('Audio playback failed:', error);
+            });
+        }
+
+        // Twitch integration via Streamlabs Socket API
+        function connectToStreamlabs() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const socketToken = urlParams.get('streamlabs-token');
+            
+            if (!socketToken) {
+                console.log('No Streamlabs token provided. Add ?streamlabs-token=YOUR_TOKEN to enable live alerts');
+                return;
+            }
+
+            // Load Socket.io library if not already loaded
+            if (typeof io === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js';
+                script.onload = function() {
+                    initializeStreamlabsConnection(socketToken);
+                };
+                document.head.appendChild(script);
+            } else {
+                initializeStreamlabsConnection(socketToken);
+            }
+        }
+
+        function initializeStreamlabsConnection(socketToken) {
+            // Connect to Streamlabs using Socket.io as per official documentation
+            const streamlabs = io(`https://sockets.streamlabs.com?token=${socketToken}`, {
+                transports: ['websocket']
+            });
+            
+            streamlabs.on('connect', function() {
+                console.log('Connected to Streamlabs!');
+            });
+            
+            // Listen for events as per official documentation
+            streamlabs.on('event', function(eventData) {
+                console.log('Received event:', eventData);
+                
+                // Handle Twitch follow events
+                if (eventData.for === 'twitch_account' && eventData.type === 'follow') {
+                    const followerName = eventData.message[0].name;
+                    triggerFollowerAlert(followerName);
+                }
+                
+                // Handle Twitch raid events
+                if (eventData.for === 'twitch_account' && eventData.type === 'raid') {
+                    const raiderName = eventData.message[0].name;
+                    const viewerCount = eventData.message[0].raiders;
+                    triggerRaidAlert(raiderName, viewerCount);
+                }
+                
+                // Handle other event types if needed
+                // You can add more event handlers here for donations, subscriptions, etc.
+            });
+            
+            streamlabs.on('disconnect', function() {
+                console.log('Disconnected from Streamlabs');
+            });
+            
+            streamlabs.on('error', function(error) {
+                console.log('Streamlabs connection error:', error);
+            });
+        }
+
+        // Function to trigger follower alert
+        function triggerFollowerAlert(followerName) {
+            // Clear any existing content
+            document.body.innerHTML = `
+                <div class="text-container">
+                    <div class="text-background" id="background"></div>
+                    <div class="main-text" id="text">${followerName} followed!</div>
+                </div>
+            `;
+            
+            // Apply follower styling
+            const textElement = document.getElementById('text');
+            textElement.classList.add('bars-rain-text-follower');
+            textElement.style.fontSize = '4rem';
+            textElement.style.color = '#ffffff';
+            textElement.style.fontWeight = '700';
+            textElement.style.textAlign = 'center';
+            
+            // Create bars and play sound
+            createBarsRainAnimation(true);
+            playFollowerSound();
+        }
+
+        // Function to trigger raid alert
+        function triggerRaidAlert(raiderName, viewerCount) {
+            // Clear any existing content
+            document.body.innerHTML = `
+                <div class="text-container">
+                    <div class="text-background" id="background"></div>
+                    <div class="main-text" id="text">${raiderName} raided with ${viewerCount} viewers!</div>
+                </div>
+            `;
+            
+            // Apply raid styling (using follower animation for now)
+            const textElement = document.getElementById('text');
+            textElement.classList.add('bars-rain-text-follower');
+            textElement.style.fontSize = '3.5rem'; // Slightly smaller for longer text
+            textElement.style.color = '#FF6B35'; // Orange color for raids
+            textElement.style.fontWeight = '700';
+            textElement.style.textAlign = 'center';
+            
+            // Create bars and play raid sound
+            createBarsRainAnimation(true);
+            playRaidSound();
+        }
+
+        // Auto-connect to Streamlabs if token is provided
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Check if this should be a live alert overlay
+            if (urlParams.has('streamlabs-token')) {
+                connectToStreamlabs();
+                return; // Don't run normal initialization for live mode
+            }
+            
+            // Original initialization for manual/testing mode
+            const text = urlParams.get('text') || 'Sample Text';
+            const size = urlParams.get('size') || '4rem';
+            const color = urlParams.get('color') || '#ffffff';
+            const animation = urlParams.get('animation') || 'fade-in';
+            const background = urlParams.get('background') || 'true';
+            const weight = urlParams.get('weight') || '700';
+            const align = urlParams.get('align') || 'center';
+            const alertType = urlParams.get('alert-type') || 'none';
+            
+            // CREATE BARS IMMEDIATELY if bars-rain animation is selected
+            if (animation === 'bars-rain') {
+                createBarsRainAnimation(alertType === 'follower');
+            }
+            
+            // Handle alert type audio
+            if (alertType === 'follower') {
+                playFollowerSound();
+            }
+            
+            // Apply parameters
+            const textElement = document.getElementById('text');
+            const backgroundElement = document.getElementById('background');
+            
+            textElement.textContent = text;
+            textElement.style.fontSize = size;
+            textElement.style.color = color;
+            textElement.style.fontWeight = weight;
+            textElement.style.textAlign = align;
+            
+            // Add animation class
+            if (animation === 'bars-rain') {
+                if (alertType === 'follower') {
+                    textElement.classList.add('bars-rain-text-follower');
+                } else {
+                    textElement.classList.add('bars-rain-text');
+                }
+            } else {
+                textElement.classList.add(animation);
+            }
+            
+            // Show/hide background
+            if (background === 'false') {
+                backgroundElement.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

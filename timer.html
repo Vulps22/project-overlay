@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Countdown Timer</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            font-family: 'Arial Black', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        .timer-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px 60px;
+            border-radius: 20px;
+            border: 3px solid #E53E3E;
+            box-shadow: 0 0 30px rgba(229, 62, 62, 0.5);
+        }
+
+        .timer-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .timer-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #E53E3E;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            letter-spacing: 4px;
+        }
+
+        .message {
+            font-size: 2rem;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .starting-soon {
+            color: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .shame-message {
+            color: #FF6B6B;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .shame-timer {
+            color: #FF6B6B;
+            font-size: 3rem;
+        }
+
+        .shame-title {
+            color: #FF6B6B;
+            font-size: 2rem;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <!-- Initial 5-minute countdown -->
+        <div id="countdown-phase">
+            <div class="timer-title">Stream Starting In</div>
+            <div class="timer-display" id="countdown-display">05:00</div>
+        </div>
+
+        <!-- "Starting Soon" phase -->
+        <div id="starting-phase" class="hidden">
+            <div class="message starting-soon">Starting Soon!</div>
+        </div>
+
+        <!-- Shame phase -->
+        <div id="shame-phase" class="hidden">
+            <div class="shame-message">Well... someone fucked up...</div>
+            <div class="shame-message">Be there in a minute</div>
+            <div class="shame-title">Timer of Shameful Lateness</div>
+            <div class="timer-display shame-timer" id="shame-display">00:00</div>
+        </div>
+    </div>
+
+    <script>
+        // Timer states
+        let currentPhase = 'countdown';
+        let countdownTime = 5 * 60; // 5 minutes in seconds
+        let startingSoonTime = 0;
+        let shameTime = 0;
+
+        // DOM elements
+        const countdownPhase = document.getElementById('countdown-phase');
+        const startingPhase = document.getElementById('starting-phase');
+        const shamePhase = document.getElementById('shame-phase');
+        const countdownDisplay = document.getElementById('countdown-display');
+        const shameDisplay = document.getElementById('shame-display');
+
+        // Format time as MM:SS
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Update display based on current phase
+        function updateDisplay() {
+            switch (currentPhase) {
+                case 'countdown':
+                    countdownDisplay.textContent = formatTime(countdownTime);
+                    break;
+                case 'starting':
+                    // No display update needed for "Starting Soon"
+                    break;
+                case 'shame':
+                    shameDisplay.textContent = formatTime(shameTime);
+                    break;
+            }
+        }
+
+        // Switch between phases
+        function switchPhase(newPhase) {
+            // Hide all phases
+            countdownPhase.classList.add('hidden');
+            startingPhase.classList.add('hidden');
+            shamePhase.classList.add('hidden');
+
+            // Show the new phase
+            switch (newPhase) {
+                case 'countdown':
+                    countdownPhase.classList.remove('hidden');
+                    break;
+                case 'starting':
+                    startingPhase.classList.remove('hidden');
+                    break;
+                case 'shame':
+                    shamePhase.classList.remove('hidden');
+                    break;
+            }
+
+            currentPhase = newPhase;
+        }
+
+        // Main timer function
+        function tick() {
+            switch (currentPhase) {
+                case 'countdown':
+                    if (countdownTime > 0) {
+                        countdownTime--;
+                        updateDisplay();
+                    } else {
+                        // Switch to "Starting Soon" phase
+                        switchPhase('starting');
+                        startingSoonTime = 0;
+                    }
+                    break;
+
+                case 'starting':
+                    startingSoonTime++;
+                    if (startingSoonTime >= 30) { // 30 seconds
+                        // Switch to shame phase
+                        switchPhase('shame');
+                        shameTime = 0;
+                    }
+                    break;
+
+                case 'shame':
+                    shameTime++;
+                    updateDisplay();
+                    break;
+            }
+        }
+
+        // Initialize the timer
+        updateDisplay();
+
+        // Start the timer (tick every second)
+        setInterval(tick, 1000);
+
+        // Optional: Add click functionality to reset timer (for testing)
+        document.addEventListener('click', function() {
+            if (currentPhase === 'shame') {
+                // Reset to beginning
+                countdownTime = 5 * 60;
+                startingSoonTime = 0;
+                shameTime = 0;
+                switchPhase('countdown');
+                updateDisplay();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "command_name": "lurk",
+  "image": "lurk.png",
+  "sound": "lurk.mp3",
+  "transition_in": "slide-right-in",
+  "transition_out": "slide-right-out",
+  "timeout": "3s"
+}
