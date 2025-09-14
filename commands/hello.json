@@ -1,7 +1,0 @@
-{
-  "command_name": "hello",
-  "text": "Hello there!",
-  "transition_in": "scale-in",
-  "transition_out": "scale-out",
-  "timeout": "2s"
-}

@@ -7,37 +7,15 @@ var COMMANDS = {
         "command_name": "lurk",
         "image": "lurk.png",
         "sound": "lurk.mp3",
+        "text": "{{username}}",
+        "reply": "Thank you for lurking, {{username}}!",
         "transition_in": "fade-in",
         "transition_out": "fade-out",
-        "timeout": "3s"
+        "timeout": "6s"
     },
-    "hype": {
-        "command_name": "hype",
-        "video": "hype.mp4",
-        "sound": "hype-sound.mp3",
-        "transition_in": "bounce-in",
-        "transition_out": "bounce-out",
-        "timeout": "5s"
-    },
-    "hello": {
-        "command_name": "hello",
-        "text": "Hello there!",
-        "transition_in": "scale-in",
-        "transition_out": "scale-out",
-        "timeout": "2s"
-    },
-    "thanks": {
-        "command_name": "thanks",
-        "image": "thanks.gif",
-        "text": "Thank you!",
-        "sound": "thanks.wav",
-        "transition_in": "fade-in",
-        "transition_out": "fade-out",
-        "timeout": "4s"
-    },
-    "complex": {
-        "command_name": "complex",
-        "module": "complex-animation"
+    "discord": {
+        "command_name": "discord",
+        "reply": "\nJoin our Discord: https://discord.vulps.co.uk",
     }
 };
 

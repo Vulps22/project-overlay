@@ -141,7 +141,7 @@
 <script src="./tmi.min.js"></script>
     <script src="./commands.js"></script>
     <script>
-        class TwitchCommandOverlay {
+    class TwitchCommandOverlay {
             constructor() {
                 this.commands = {};
                 this.modules = {};
@@ -156,7 +156,7 @@
 
             async loadCommands() {
                 try {
-                    // Load commands from the configuration file
+                    // Use the imported COMMANDS from commands-config.js
                     this.commands = COMMANDS;
                     console.log('All commands loaded:', Object.keys(this.commands));
                 } catch (error) {
@@ -165,13 +165,27 @@
             }
 
             connectToTwitch() {
-                // Replace with your Twitch channel name
-                const channel = 'vulps22';
-                
-                // Use tmi from window object
-                const client = new tmi.Client({
+                // Read token and username from URL params
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('twitch-token');
+                const username = urlParams.get('twitch-username');
+                const channel = urlParams.get('twitch-channel') || 'vulps22';
+
+                let clientConfig = {
                     channels: [channel]
-                });
+                };
+                if (token && username) {
+                    clientConfig.identity = {
+                        username: username,
+                        password: `oauth:${token}`
+                    };
+                    console.log('Twitch chat: Using authenticated mode for', username);
+                } else {
+                    console.log('Twitch chat: Using anonymous mode (read-only)');
+                }
+
+                // Use tmi from window object
+                const client = new tmi.Client(clientConfig);
 
                 client.connect();
 
@@ -197,14 +211,16 @@
                         console.log('User tags:', tags);
                         console.log('========================');
                         
-                        this.executeCommand(commandName, args, tags);
+                        this.executeCommand(commandName, args, tags, client);
                     }
                 });
+
+                this.client = client; // Save for later use (e.g., posting)
 
                 console.log(`Connected to Twitch channel: ${channel}`);
             }
 
-            async executeCommand(commandName, args, userTags) {
+        async executeCommand(commandName, args, userTags, client) {
                 console.log('=== EXECUTE COMMAND ===');
                 console.log('Looking for command:', commandName);
                 console.log('Available commands:', Object.keys(this.commands));
@@ -213,19 +229,22 @@
                 
                 if (this.commands[commandName]) {
                     console.log('Executing JSON command:', this.commands[commandName]);
-                    await this.executeJSONCommand(this.commands[commandName], args, userTags);
+            await this.executeJSONCommand(this.commands[commandName], args, userTags, client);
                 } else if (await this.loadModule(commandName)) {
                     console.log('Executing module command:', commandName);
-                    await this.executeModuleCommand(commandName, args, userTags);
+            await this.executeModuleCommand(commandName, args, userTags, client);
                 } else {
                     console.log(`Unknown command: ${commandName}`);
                 }
             }
 
-            async executeJSONCommand(commandData, args, userTags) {
+            async executeJSONCommand(commandData, args, userTags, client) {
                 const outputElement = document.createElement('div');
                 outputElement.className = 'command-output';
-                
+
+                // Username for template replacement
+                const username = userTags && userTags['display-name'] ? userTags['display-name'] : (userTags && userTags.username ? userTags.username : '');
+
                 // Apply transition in class
                 if (commandData.transition_in) {
                     outputElement.classList.add(commandData.transition_in);
@@ -249,11 +268,11 @@
                     outputElement.appendChild(video);
                 }
 
-                // Add text
+                // Add text (with {{username}} replacement)
                 if (commandData.text) {
                     const textDiv = document.createElement('div');
                     textDiv.className = 'command-text';
-                    textDiv.textContent = commandData.text;
+                    textDiv.textContent = commandData.text.replace(/\{\{\s*username\s*\}\}/gi, username);
                     outputElement.appendChild(textDiv);
                 }
 
@@ -267,6 +286,15 @@
 
                 // Add to container
                 this.container.appendChild(outputElement);
+
+                // Post reply to chat if defined
+                if (commandData.reply && client && typeof client.say === 'function') {
+                    const channel = client.getChannels ? client.getChannels()[0] : null;
+                    if (channel) {
+                        const replyMsg = commandData.reply.replace(/\{\{\s*username\s*\}\}/gi, username);
+                        client.say(channel, replyMsg);
+                    }
+                }
 
                 // Remove after timeout
                 const timeout = this.parseTimeout(commandData.timeout || '3s');
