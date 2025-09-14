@@ -138,25 +138,16 @@
 <body>
     <div id="overlay-container"></div>
 
-<script src="./tmi.min.js"></script>
-    <script src="./commands.js"></script>
+<script src="./commands.js"></script>
+    <script src="./events.js"></script>
+    <script src="./twitch-command-handler.js"></script>
+    <script src="./twitch-event-handler.js"></script>
     <script src="./twitch-eventsub.js"></script>
-    <script src="./twitch-overlay.js"></script>
     <script>
         // Initialize the overlay when the page loads
         window.addEventListener('DOMContentLoaded', () => {
-            // Wait a bit for tmi.js to fully load
-            setTimeout(() => {
-                if (typeof tmi !== 'undefined' || typeof window.tmi !== 'undefined') {
-                    new TwitchCommandOverlay();
-                } else {
-                    console.error('tmi.js failed to load. Check your internet connection.');
-                    console.log('Available globals:', Object.keys(window).filter(k => k.includes('tmi')));
-                }
-                
-                // Also initialize EventSub WebSocket
-                new TwitchEventSubWebSocket();
-            }, 500);
+            // Initialize EventSub WebSocket (which will also initialize the command handler)
+            new TwitchEventSubWebSocket();
         });
     </script>
 </body>

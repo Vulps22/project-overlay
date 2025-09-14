@@ -8,6 +8,7 @@ var TwitchEventSubWebSocket = class {
         this.accessToken = null;
         this.clientId = null;
         this.userId = null;
+        this.commandHandler = null;
         this.init();
     }
 
@@ -27,8 +28,20 @@ var TwitchEventSubWebSocket = class {
             return;
         }
 
+        // Initialize command handler
+        this.commandHandler = new TwitchCommandHandler();
+        
+        // Initialize event handler
+        this.eventHandler = new TwitchEventHandler();
+
         // Get user ID from Twitch API
         await this.getUserId();
+        
+        // Pass user ID to handlers for chat posting
+        if (this.userId) {
+            this.commandHandler.userId = this.userId;
+            this.eventHandler.userId = this.userId;
+        }
         
         // Check token scopes before proceeding
         await this.checkTokenScopes();
@@ -69,9 +82,9 @@ var TwitchEventSubWebSocket = class {
             if (response.ok) {
                 const data = await response.json();
                 console.log('EventSub: Current token scopes:', data.scopes);
-                console.log('EventSub: Required scopes: user:read:chat, user:bot, channel:bot, channel:read:subscriptions, moderator:read:followers');
+                console.log('EventSub: Required scopes: user:read:chat, user:bot, channel:bot, channel:read:subscriptions, moderator:read:followers, user:write:chat');
                 
-                const requiredScopes = ['user:read:chat', 'channel:read:subscriptions', 'moderator:read:followers'];
+                const requiredScopes = ['user:read:chat', 'channel:read:subscriptions', 'moderator:read:followers', 'user:write:chat'];
                 const missingScopes = requiredScopes.filter(scope => !data.scopes.includes(scope));
                 
                 if (missingScopes.length > 0) {
@@ -118,6 +131,7 @@ var TwitchEventSubWebSocket = class {
                 this.sessionId = message.payload.session.id;
                 console.log('EventSub: Got session ID:', this.sessionId);
                 await this.subscribeToChatMessages();
+                await this.subscribeToFollows();
                 break;
 
             case 'session_keepalive':
@@ -180,6 +194,48 @@ var TwitchEventSubWebSocket = class {
         }
     }
 
+    async subscribeToFollows() {
+        if (!this.sessionId || !this.userId) {
+            console.error('EventSub: Cannot subscribe to follows - missing session ID or user ID');
+            return;
+        }
+
+        const subscriptionData = {
+            type: 'channel.follow',
+            version: '2',
+            condition: {
+                broadcaster_user_id: this.userId,
+                moderator_user_id: this.userId
+            },
+            transport: {
+                method: 'websocket',
+                session_id: this.sessionId
+            }
+        };
+
+        try {
+            const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Client-Id': this.clientId,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(subscriptionData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('EventSub: Successfully subscribed to follow events:', result);
+            } else {
+                const error = await response.json();
+                console.error('EventSub: Failed to subscribe to follow events:', error);
+            }
+        } catch (error) {
+            console.error('EventSub: Error subscribing to follow events:', error);
+        }
+    }
+
     handleNotification(message) {
         const event = message.payload.event;
         
@@ -193,6 +249,37 @@ var TwitchEventSubWebSocket = class {
             console.log('Timestamp:', event.message.timestamp);
             console.log('Raw Event:', event);
             console.log('=============================');
+
+            // Pass message to command handler
+            if (this.commandHandler) {
+                const userInfo = {
+                    username: event.chatter_user_name,
+                    display_name: event.chatter_user_display_name,
+                    user_id: event.chatter_user_id
+                };
+                this.commandHandler.processChatMessage(event.message.text, userInfo);
+            }
+        }
+        
+        if (message.payload.subscription.type === 'channel.follow') {
+            console.log('=== EVENTSUB FOLLOW EVENT ===');
+            console.log('Follower:', event.user_name);
+            console.log('Display Name:', event.user_display_name);
+            console.log('User ID:', event.user_id);
+            console.log('Followed At:', event.followed_at);
+            console.log('Raw Event:', event);
+            console.log('=============================');
+            
+            // Pass event to event handler
+            if (this.eventHandler) {
+                const eventData = {
+                    username: event.user_name,
+                    display_name: event.user_display_name,
+                    user_id: event.user_id,
+                    followed_at: event.followed_at
+                };
+                this.eventHandler.processEvent('follow', eventData);
+            }
         }
     }
 };
