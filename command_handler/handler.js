@@ -7,6 +7,7 @@ var Handler = class {
         this.accessToken = null;
         this.clientId = null;
         this.userId = null;
+        this.channelId = null;
         this.initAuth();
     }
 
@@ -67,7 +68,7 @@ var Handler = class {
         this.container.appendChild(outputElement);
 
         // Post reply to chat if defined
-        if (config.reply && this.accessToken && this.clientId && this.userId) {
+        if (config.reply && this.accessToken && this.clientId && this.userId && this.channelId) {
             const replyMsg = this.replaceTemplates(config.reply, templateData);
             await this.postChatMessage(replyMsg);
         }
@@ -107,7 +108,7 @@ var Handler = class {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    broadcaster_id: this.userId,
+                    broadcaster_id: this.channelId,
                     sender_id: this.userId,
                     message: message
                 })

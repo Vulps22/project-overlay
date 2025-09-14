@@ -8,6 +8,9 @@ var TwitchEventSubWebSocket = class {
         this.accessToken = null;
         this.clientId = null;
         this.userId = null;
+        this.username = null;
+        this.channelId = null;
+        this.channelName = null;
         this.commandHandler = null;
         this.init();
     }
@@ -17,6 +20,7 @@ var TwitchEventSubWebSocket = class {
         const urlParams = new URLSearchParams(window.location.search);
         this.accessToken = urlParams.get('twitch-token');
         this.clientId = urlParams.get('twitch-client-id');
+        this.channelName = urlParams.get('twitch-channel') || null;
         
         if (!this.accessToken) {
             console.warn('No Twitch token provided. EventSub WebSocket will not work without authentication.');
@@ -34,13 +38,25 @@ var TwitchEventSubWebSocket = class {
         // Initialize event handler
         this.eventHandler = new TwitchEventHandler();
 
-        // Get user ID from Twitch API
+        // Get user ID from Twitch API (bot account)
         await this.getUserId();
         
-        // Pass user ID to handlers for chat posting
+        // Get channel ID if channel name provided
+        if (this.channelName) {
+            await this.getChannelId();
+        } else {
+            this.channelId = this.userId; // Default to bot's own channel
+        }
+        
+        // Pass user ID and channel ID to handlers for chat posting
         if (this.userId) {
             this.commandHandler.userId = this.userId;
             this.eventHandler.userId = this.userId;
+        }
+        
+        if (this.channelId) {
+            this.commandHandler.channelId = this.channelId;
+            this.eventHandler.channelId = this.channelId;
         }
         
         // Check token scopes before proceeding
@@ -62,12 +78,42 @@ var TwitchEventSubWebSocket = class {
             if (response.ok) {
                 const data = await response.json();
                 this.userId = data.data[0].id;
+                this.username = data.data[0].display_name;
                 console.log('EventSub: Got user ID:', this.userId);
+                console.log('EventSub: Connected as:', this.username);
             } else {
                 console.error('EventSub: Failed to get user ID:', response.statusText);
             }
         } catch (error) {
             console.error('EventSub: Error getting user ID:', error);
+        }
+    }
+
+    async getChannelId() {
+        try {
+            const response = await fetch(`https://api.twitch.tv/helix/users?login=${this.channelName}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Client-Id': this.clientId
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.data.length > 0) {
+                    this.channelId = data.data[0].id;
+                    console.log('EventSub: Got channel ID for', this.channelName + ':', this.channelId);
+                } else {
+                    console.error('EventSub: Channel not found:', this.channelName);
+                    this.channelId = this.userId; // Fallback to bot's channel
+                }
+            } else {
+                console.error('EventSub: Failed to get channel ID:', response.statusText);
+                this.channelId = this.userId; // Fallback to bot's channel
+            }
+        } catch (error) {
+            console.error('EventSub: Error getting channel ID:', error);
+            this.channelId = this.userId; // Fallback to bot's channel
         }
     }
 
@@ -130,6 +176,7 @@ var TwitchEventSubWebSocket = class {
             case 'session_welcome':
                 this.sessionId = message.payload.session.id;
                 console.log('EventSub: Got session ID:', this.sessionId);
+                console.log(`EventSub: Connected as ${this.username}`);
                 await this.subscribeToChatMessages();
                 await this.subscribeToFollows();
                 break;
@@ -162,7 +209,7 @@ var TwitchEventSubWebSocket = class {
             type: 'channel.chat.message',
             version: '1',
             condition: {
-                broadcaster_user_id: this.userId,
+                broadcaster_user_id: this.channelId,
                 user_id: this.userId
             },
             transport: {
@@ -204,7 +251,7 @@ var TwitchEventSubWebSocket = class {
             type: 'channel.follow',
             version: '2',
             condition: {
-                broadcaster_user_id: this.userId,
+                broadcaster_user_id: this.channelId,
                 moderator_user_id: this.userId
             },
             transport: {
